@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>گالری با آپلود مستقیم</title>
+
+    <style>
+        /* ===== استایل‌های پایه ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Tahoma, sans-serif;
+        }
+
+        body {
+            background: #0f0f0f;
+            color: #fff;
+            padding-bottom: 80px;
+            /* فاصله برای دکمه + پایین */;
+        }
+
+        /* ===== هدر ===== */
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            background: #181818;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .logo span {
+            color: #4caf50;
+        }
+
+        .menu-btn {
+            font-size: 28px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* ===== سایدبار ===== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: #1b1b1b;
+            transition: .3s ease;
+            z-index: 1000;
+            overflow: auto;
+            padding-bottom: 30px;
+            border-left: 1px solid #333;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar h2 {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar .cat-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #2c2c2c;
+            transition: .2s;
+        }
+
+        .sidebar .cat-item:hover {
+            background: #2c2c2c;
+            padding-right: 25px;
+        }
+
+        /* ===== بخش جستجو ===== */
+        .controls {
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            background: #141414;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .controls .search-box {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .controls .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #222;
+            color: #fff;
+            outline: 1px solid #333;
+            transition: .2s;
+        }
+        .controls .search-box input:focus {
+            outline: 1px solid #4caf50;
+        }
+
+        /* ===== گالری ===== */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+            padding: 20px 15px;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 18px;
+            overflow: hidden;
+            transition: .3s;
+            position: relative;
+            border: 1px solid #2a2a2a;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #4caf50;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+            background: #222;
+        }
+
+        .card .info {
+            padding: 12px 14px;
+        }
+
+        .card .title {
+            font-size: 17px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .card .cat {
+            font-size: 13px;
+            opacity: .7;
+            display: inline-block;
+            background: #2a2a2a;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        /* دکمه حذف (روی کارت) */
+        .card .delete-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(220, 20, 20, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: .2s;
+            z-index: 10;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .card:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .card .delete-btn:hover {
+            background: #ff3333;
+            transform: scale(1.15) !important;
+        }
+
+        /* ===== دکمه + شناور در پایین ===== */
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 65px;
+            height: 65px;
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 40px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            transition: .3s;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fab:hover {
+            transform: scale(1.08);
+            background: #66bb6a;
+        }
+
+        /* ===== مودال افزودن ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 550px;
+            width: 100%;
+            border: 1px solid #333;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal .close-modal {
+            position: absolute;
+            top: 12px;
+            left: 18px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #aaa;
+            transition: .2s;
+            background: none;
+            border: none;
+        }
+        .modal .close-modal:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+
+        .modal label {
+            display: block;
+            margin: 12px 0 5px;
+            font-size: 14px;
+            opacity: .8;
+        }
+
+        .modal input,
+        .modal select,
+        .modal textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 12px;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 15px;
+            outline: 1px solid #444;
+            transition: .2s;
+            margin-bottom: 10px;
+        }
+        .modal input:focus,
+        .modal select:focus,
+        .modal textarea:focus {
+            outline: 1px solid #4caf50;
+        }
+
+        .modal textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        /* استایل آپلود فایل */
+        .file-upload-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #222;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px dashed #555;
+            transition: .2s;
+            cursor: pointer;
+        }
+        .file-upload-area:hover {
+            border-color: #4caf50;
+        }
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            cursor: pointer;
+        }
+        .file-upload-label span {
+            opacity: .6;
+            font-size: 14px;
+        }
+        #previewInModal {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #4caf50;
+            display: none;
+        }
+
+        .modal .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4caf50;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: .2s;
+            margin-top: 10px;
+        }
+        .modal .submit-btn:hover {
+            background: #66bb6a;
+        }
+
+        /* ===== نمایشگر بزرگ ===== */
+        .viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .94);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .viewer img {
+            max-width: 95%;
+            max-height: 70%;
+            border-radius: 15px;
+            object-fit: contain;
+        }
+
+        .viewer h2 {
+            margin-top: 20px;
+            font-size: 26px;
+        }
+
+        .viewer p {
+            margin-top: 10px;
+            text-align: center;
+            max-width: 700px;
+            opacity: .8;
+            font-size: 16px;
+            padding: 0 15px;
+        }
+
+        .close-viewer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 38px;
+            cursor: pointer;
+            transition: .2s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: #fff;
+        }
+        .close-viewer:hover {
+            background: rgba(255, 0, 0, 0.2);
+            transform: rotate(90deg);
+        }
+
+        /* ===== پیام خالی ===== */
+        .empty-msg {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            opacity: .5;
+            grid-column: 1 / -1;
+        }
+
+        /* ===== ریسپانسیو ===== */
+        @media (max-width: 600px) {
+            .modal {
+                padding: 20px;
+            }
+            .fab {
+                width: 58px;
+                height: 58px;
+                font-size: 34px;
+                bottom: 18px;
+                left: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== هدر ===== -->
+    <header>
+        <div class="logo">📸 <span>گالری</span></div>
+        <div class="menu-btn" onclick="toggleMenu()">☰</div>
+    </header>
+
+    <!-- ===== سایدبار ===== -->
+    <div class="sidebar" id="sidebar">
+        <h2>📂 دسته‌بندی‌ها</h2>
+        <div class="cat-item" onclick="filterCategory('همه')">🌟 همه</div>
+        <div class="cat-item" onclick="filterCategory('طبیعت')">🌿 طبیعت</div>
+        <div class="cat-item" onclick="filterCategory('ماشین')">🚗 ماشین</div>
+        <div class="cat-item" onclick="filterCategory('انیمه')">🎌 انیمه</div>
+        <div class="cat-item" onclick="filterCategory('فناوری')">💻 فناوری</div>
+        <div class="cat-item" onclick="filterCategory('سایر')">📦 سایر</div>
+    </div>
+
+    <!-- ===== بخش جستجو ===== -->
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 جستجو در عنوان، توضیحات یا دسته..." onkeyup="searchImages()">
+        </div>
+    </div>
+
+    <!-- ===== گالری ===== -->
+    <div class="gallery" id="gallery"></div>
+
+    <!-- ===== دکمه + شناور ===== -->
+    <button class="fab" id="addBtn" title="افزودن تصویر جدید">+</button>
+
+    <!-- ===== مودال افزودن ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="close-modal" onclick="closeModal()">✕</button>
+            <h2>➕ افزودن تصویر جدید</h2>
+
+            <label>عنوان (اجباری)</label>
+            <input type="text" id="modalTitle" placeholder="عنوان تصویر">
+
+            <label>دسته‌بندی</label>
+            <select id="modalCategory">
+                <option value="طبیعت">طبیعت</option>
+                <option value="ماشین">ماشین</option>
+                <option value="انیمه">انیمه</option>
+                <option value="فناوری">فناوری</option>
+                <option value="سایر" selected>سایر</option>
+            </select>
+
+            <label>توضیحات (اختیاری)</label>
+            <textarea id="modalDesc" placeholder="توضیح درباره تصویر..."></textarea>
+
+            <label>انتخاب تصویر (اجباری)</label>
+            <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="file-upload-label">
+                    <span>📁 کلیک یا بکشید</span>
+                </div>
+                <img id="previewInModal" alt="پیش‌نمایش">
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <button class="submit-btn" onclick="addImageFromModal()">✅ ذخیره تصویر</button>
+        </div>
+    </div>
+
+    <!-- ===== نمایشگر بزرگ ===== -->
+    <div class="viewer" id="viewer">
+        <button class="close-viewer" onclick="closeViewer()">✕</button>
+        <img id="bigImg" src="" alt="تصویر بزرگ">
+        <h2 id="bigTitle"></h2>
+        <p id="bigDesc"></p>
+    </div>
+
+    <script>
+        // ================================================================
+        //  داده‌های پیش‌فرض (با تصاویر واقعی از picsum)
+        // ================================================================
+        function getDefaultImages() {
+            return [
+                { id: crypto.randomUUID(), title: "جنگل بارانی", category: "طبیعت", desc: "نمایی از جنگل‌های استوایی", image: "https://picsum.photos/seed/forest1/400/300" },
+                { id: crypto.randomUUID(), title: "شب پرستاره", category: "طبیعت", desc: "آسمان شب در دل کوهستان", image: "https://picsum.photos/seed/night1/400/300" },
+                { id: crypto.randomUUID(), title: "خودروی کلاسیک", category: "ماشین", desc: "یک ماشین قدیمی و دوست‌داشتنی", image: "https://picsum.photos/seed/car1/400/300" },
+                { id: crypto.randomUUID(), title: "ابرخودرو", category: "ماشین", desc: "طراحی آینده‌نگرانه", image: "https://picsum.photos/seed/sport1/400/300" },
+                { id: crypto.randomUUID(), title: "سایبرپانک", category: "انیمه", desc: "فضای علمی-تخیلی", image: "https://picsum.photos/seed/anime1/400/300" },
+                { id: crypto.randomUUID(), title: "لب‌تاپ مدرن", category: "فناوری", desc: "لپ‌تاپ فوق‌باریک با نمایشگر ۴K", image: "https://picsum.photos/seed/tech1/400/300" }
+            ];
+        }
+
+        // ================================================================
+        //  متغیرها
+        // ================================================================
+        let allImages = [];
+        let selectedFileDataURL = null; // برای نگهداری Data URL تصویر انتخاب‌شده
+
+        // ================================================================
+        //  localStorage
+        // ================================================================
+        function saveToLocalStorage() {
+            localStorage.setItem('galleryImages', JSON.stringify(allImages));
+        }
+
+        function loadFromLocalStorage() {
+            const stored = localStorage.getItem('galleryImages');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        allImages = parsed;
+                        return;
+                    }
+                } catch (e) { /* fallback */ }
+            }
+            allImages = getDefaultImages();
+            saveToLocalStorage();
+        }
+
+        // ================================================================
+        //  رندر گالری
+        // ================================================================
+        function render(list) {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            if (!list || list.length === 0) {
+                gallery.innerHTML = `<div class="empty-msg">😕 هیچ تصویری یافت نشد.<br>با دکمه + پایین صفحه یکی اضافه کن!</div>`;
+                return;
+            }
+
+            list.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const safeId = item.id || 'no-id';
+
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteImage('${safeId}')">✕</button>
+                    <img src="${item.image}" alt="${item.title}" loading="lazy" onclick="openViewer('${item.image}', '${item.title}', '${item.desc}')">
+                    <div class="info">
+                        <div class="title">${item.title}</div>
+                        <div class="cat">📂 ${item.category || 'سایر'}</div>
+                    </div>
+                `;
+                gallery.appendChild(card);
+            });
+        }
+
+        function renderAll() {
+            const q = document.getElementById('search').value.trim().toLowerCase();
+            if (q === '') {
+                render(allImages);
+            } else {
+                const filtered = allImages.filter(item =>
+                    item.title.toLowerCase().includes(q) ||
+                    (item.desc && item.desc.toLowerCase().includes(q)) ||
+                    (item.category && item.category.toLowerCase().includes(q))
+                );
+                render(filtered);
+            }
+        }
+
+        // ================================================================
+        //  مودال افزودن
+        // ================================================================
+        function openModal() {
+            document.getElementById('modalOverlay').classList.add('active');
+            // ریست فرم
+            document.getElementById('modalTitle').value = '';
+            document.getElementById('modalCategory').value = 'سایر';
+            document.getElementById('modalDesc').value = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('previewInModal').style.display = 'none';
+            selectedFileDataURL = null;
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        // نمایش پیش‌نمایش هنگام انتخاب فایل
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                selectedFileDataURL = ev.target.result;
+                const preview = document.getElementById('previewInModal');
+                preview.src = selectedFileDataURL;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ================================================================
+        //  افزودن تصویر از مودال
+        // ================================================================
+        function addImageFromModal() {
+            const title = document.getElementById('modalTitle').value.trim();
+            const category = document.getElementById('modalCategory').value;
+            const desc = document.getElementById('modalDesc').value.trim();
+
+            if (!title) {
+                alert('❌ لطفاً عنوان را وارد کنید.');
+                return;
+            }
+            if (!selectedFileDataURL) {
+                alert('❌ لطفاً یک تصویر انتخاب کنید.');
+                return;
+            }
+
+            const newItem = {
+                id: crypto.randomUUID(),
+                title,
+                category,
+                desc: desc || 'بدون توضیحات',
+                image: selectedFileDataURL
+            };
+
+            allImages.push(newItem);
+            saveToLocalStorage();
+            closeModal();
+            renderAll();
+        }
+
+        // ================================================================
+        //  حذف تصویر
+        // ================================================================
+        function deleteImage(id) {
+            const item = allImages.find(it => it.id === id);
+            if (!item) return;
+            if (!confirm(`آیا از حذف "${item.title}" مطمئن هستی؟`)) return;
+
+            allImages = allImages.filter(it => it.id !== id);
+            saveToLocalStorage();
+            renderAll();
+        }
+
+        // ================================================================
+        //  فیلتر دسته‌بندی
+        // ================================================================
+        function filterCategory(cat) {
+            document.getElementById('search').value = '';
+            if (cat === 'همه') {
+                render(allImages);
+            } else {
+                const filtered = allImages.filter(item => item.category === cat);
+                render(filtered);
+            }
+            document.getElementById('sidebar').classList.remove('active');
+        }
+
+        // ================================================================
+        //  جستجو
+        // ================================================================
+        function searchImages() {
+            renderAll();
+        }
+
+        // ================================================================
+        //  منو (سایدبار)
+        // ================================================================
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // ================================================================
+        //  نمایشگر بزرگ
+        // ================================================================
+        function openViewer(img, title, desc) {
+            document.getElementById('bigImg').src = img;
+            document.getElementById('bigTitle').innerText = title;
+            document.getElementById('bigDesc').innerText = desc || 'بدون توضیحات';
+            document.getElementById('viewer').style.display = 'flex';
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer').style.display = 'none';
+        }
+
+        // کلیک روی پس‌زمینه برای بستن Viewer
+        document.getElementById('viewer').addEventListener('click', function(e) {
+            if (e.target === this) closeViewer();
+        });
+
+        // کلیک روی overlay مودال برای بستن (فقط روی پس‌زمینه)
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ================================================================
+        //  رویداد دکمه + (افزودن)
+        // ================================================================
+        document.getElementById('addBtn').addEventListener('click', openModal);
+
+        // ================================================================
+        //  مقداردهی اولیه
+        // ================================================================
+        loadFromLocalStorage();
+        renderAll();
+    </script>
+
+</body>
+  </html>
