@@ -1,0 +1,14 @@
+[
+  {
+    "title":"عکس اول",
+    "text":"توضیح عکس اول",
+    "image":"images/1.jpg",
+    "category":"طبیعت"
+  },
+  {
+    "title":"عکس دوم",
+    "text":"توضیح عکس دوم",
+    "image":"images/2.jpg",
+    "category":"فناوری"
+  }
+]
